@@ -1,18 +1,18 @@
 #include <stdio.h>
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
 #include <fstream>
 #include <iostream>
 
 using namespace std;
 
-vector<int> encoding(ifstream &input, int tamanhoArq)
+vector<int>
+encoding(ifstream &input)
 {
     unordered_map<string, int> table;
     vector<int> output_code;
     int code = 256;
     char a;
-    int count = 0;
 
     cout << "Encoding\n";
 
@@ -25,12 +25,13 @@ vector<int> encoding(ifstream &input, int tamanhoArq)
 
     string p = "", c = "";
 
-    input.open("teste.txt");
+    input.open("test.txt");
 
     input >> a;
-    //cout << "VALOR DO CHAR a: " << a << endl;
+    cout << "VALOR DO CHAR a: " << a << endl;
 
     p += a;
+    char b;
     if (!input.good())
     {
         input.close();
@@ -39,14 +40,17 @@ vector<int> encoding(ifstream &input, int tamanhoArq)
     {
         while (!input.eof())
         {
-            count ++;
-            char b;
+            // input >> b;
+            // cout << "VALOR DO CHAR p: " << p << endl;
+            // c += b;
+            // cout << "VALOR DO CHAR c: " << c << endl;
             input >> b;
-            //cout << "VALOR DO CHAR b: " << b << endl;
-            if(count != tamanhoArq){
-               c += b; 
+            c += b;
+
+            if (input.eof())
+            {
+                c = "";
             }
-            
 
             if (table.find(p + c) != table.end())
             {
@@ -72,27 +76,10 @@ vector<int> encoding(ifstream &input, int tamanhoArq)
 
 int main()
 {
-    // opening the file in read mode
-    FILE* fp = fopen("teste.txt", "r");
-  
-    // checking if the file exist or not
-    if (fp == NULL) {
-        printf("File Not Found!\n");
-        return -1;
-    }
-  
-    fseek(fp, 0L, SEEK_END);
-  
-    // calculating the size of the file
-    long int tam = ftell(fp);
-    cout << "Tamanho do arquivo: " << tam << endl;
-  
-    // closing the file
-    fclose(fp);
 
     ifstream input;
 
-    vector<int> output_code = encoding(input, tam);
+    vector<int> output_code = encoding(input);
 
     cout << "Output Codes are: ";
 
