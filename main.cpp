@@ -1,15 +1,18 @@
 #include <stdio.h>
-#include <bits/stdc++.h>
+#include <unordered_map>
+#include <vector>
 #include <fstream>
+#include <iostream>
 
 using namespace std;
 
-vector<int> encoding(ifstream &input)
+vector<int> encoding(ifstream &input, int tamanhoArq)
 {
     unordered_map<string, int> table;
     vector<int> output_code;
     int code = 256;
     char a;
+    int count = 0;
 
     cout << "Encoding\n";
 
@@ -22,10 +25,10 @@ vector<int> encoding(ifstream &input)
 
     string p = "", c = "";
 
-    input.open("test.txt");
+    input.open("teste.txt");
 
     input >> a;
-    cout << "VALOR DO CHAR a: " << a << endl;
+    //cout << "VALOR DO CHAR a: " << a << endl;
 
     p += a;
     if (!input.good())
@@ -36,10 +39,14 @@ vector<int> encoding(ifstream &input)
     {
         while (!input.eof())
         {
+            count ++;
             char b;
             input >> b;
-            cout << "VALOR DO CHAR b: " << b << endl;
-            c += b;
+            //cout << "VALOR DO CHAR b: " << b << endl;
+            if(count != tamanhoArq){
+               c += b; 
+            }
+            
 
             if (table.find(p + c) != table.end())
             {
@@ -65,10 +72,27 @@ vector<int> encoding(ifstream &input)
 
 int main()
 {
+    // opening the file in read mode
+    FILE* fp = fopen("teste.txt", "r");
+  
+    // checking if the file exist or not
+    if (fp == NULL) {
+        printf("File Not Found!\n");
+        return -1;
+    }
+  
+    fseek(fp, 0L, SEEK_END);
+  
+    // calculating the size of the file
+    long int tam = ftell(fp);
+    cout << "Tamanho do arquivo: " << tam << endl;
+  
+    // closing the file
+    fclose(fp);
 
     ifstream input;
 
-    vector<int> output_code = encoding(input);
+    vector<int> output_code = encoding(input, tam);
 
     cout << "Output Codes are: ";
 
