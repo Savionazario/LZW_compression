@@ -7,6 +7,7 @@ class LZW{
 
     public:
         LZW();
+        void lerArquivo();
         void encode();
         void decode();
 };
