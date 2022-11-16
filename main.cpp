@@ -10,7 +10,6 @@ using namespace std;
 unsigned char *buffer = new unsigned char[SIZE];
 int pos = 0; // posicao em bits
 FILE *output;
-int CONTADOR_GLOBAL = 0;
 const char *name = "output.lzw";
 
 void addBits(int value, int qBits)
@@ -155,23 +154,17 @@ void lerArquivo(const char *name)
     fclose(input);
 }
 
-void testeSalva()
+int testeSalva()
 {
-    int i;
+    int i, array_dicionario[500] = {0}, contador = 0;
     int qBits = 0;
     int value = 0;
-    output = fopen(name, "wb");
-    if (output <= 0)
-    {
-        printf("Erro abrindo o arquivo %s\n", name);
-        return;
-    }
-
+    int j = 0;
     qBits = 9;
 
     ifstream input;
     input.open("dicionario.txt");
-    int j = 0;
+
     if (!input.good())
     {
         input.close();
@@ -181,12 +174,35 @@ void testeSalva()
         while (!input.eof())
         {
             input >> value;
-            cout << value << " " << endl;
-            addBits(value, qBits);
-            CONTADOR_GLOBAL++;
-            cout << "VALOR DE CONTADOR_GLOBAL " << CONTADOR_GLOBAL << endl;
+            array_dicionario[contador] = value;
+            cout << array_dicionario[contador] << " ";
+            contador++;
+            // addBits(value, qBits);
         }
     }
+    cout << "\n";
+    input.close();
+
+    for (int k = 0; k < contador - 1; k++)
+    {
+        cout << array_dicionario[k] << " ";
+    }
+
+    cout << " ------------------ DICIONARIO ANTES DA DECODIFICAÇAO ------------------------------" << endl;
+    cout << "\n";
+    cout << "\n";
+    output = fopen(name, "wb");
+    if (output <= 0)
+    {
+        printf("Erro abrindo o arquivo %s\n", name);
+        return 0;
+    }
+
+    for (int k = 0; k < contador - 1; k++)
+    {
+        addBits(array_dicionario[k], qBits);
+    }
+
     // addBits(10, qBits);
     // addBits(8, qBits);
     // addBits(127, qBits);
@@ -216,9 +232,10 @@ void testeSalva()
     salvaFim();
     printf("arquivo lido: \n");
     lerArquivo(name);
+    return contador - 1;
 }
 
-void testeLeitura()
+void testeLeitura(int contador)
 {
     int i = 0;
     int qBits = 0;
@@ -239,21 +256,20 @@ void testeLeitura()
     buffer = new unsigned char[tam];
     fread(buffer, 1, tam, output);
 
-    int vet[CONTADOR_GLOBAL - 1] = {};
-    cout << "Valor contador global: " << CONTADOR_GLOBAL << endl;
+    int vet[500] = {};
     // i = 0;
     qBits = 9;
 
-    for (i = 0; i < tam; i++)
+    for (i = 0; i < tam;)
     {
         // cout << i;
-        vet[i] = getBits(qBits);
+        vet[i++] = getBits(qBits);
         // cout << i;
     }
 
     printf("teste leitura:\n");
     int j;
-    for (j = 0; j < CONTADOR_GLOBAL - 1; j++)
+    for (j = 0; j < contador; j++)
         printf("%d ", vet[j]);
 
     printf("\n");
@@ -286,7 +302,7 @@ vector<int> encoding(ifstream &input)
 
     string p = "", c = "";
 
-    input.open("test.txt");
+    input.open("texto.txt");
 
     input >> a;
     cout << "VALOR DO CHAR a: " << a << endl;
@@ -319,8 +335,8 @@ vector<int> encoding(ifstream &input)
             }
             else
             {
-                cout << p << "\t" << table[p] << "\t\t"
-                     << p + c << "\t" << code << endl;
+                // cout << p << "\t" << table[p] << "\t\t"
+                //<< p + c << "\t" << code << endl;
                 output_code.push_back(table[p]);
                 if (code <= 511)
                 {
@@ -341,10 +357,10 @@ vector<int> encoding(ifstream &input)
 
 int main()
 {
+    int contador = 0;
     setlocale(LC_ALL, "");
 
     ifstream input;
-
     vector<int> output_code = encoding(input);
 
     cout << "Output Codes are: ";
@@ -366,6 +382,6 @@ int main()
 
     output.close();
 
-    testeSalva();
-    testeLeitura();
+    contador = testeSalva();
+    testeLeitura(contador);
 }
