@@ -156,11 +156,11 @@ void lerArquivo(const char *name)
 
 int testeSalva()
 {
-    int i, array_dicionario[500] = {0}, contador = 0;
+    int i, array_dicionario[500] = {0}, contador = 0; // MUDAR PRA VECTOR
     int qBits = 0;
     int value = 0;
     int j = 0;
-    qBits = 9;
+    qBits = 16;
 
     ifstream input;
     input.open("dicionario.txt");
@@ -175,22 +175,22 @@ int testeSalva()
         {
             input >> value;
             array_dicionario[contador] = value;
-            cout << array_dicionario[contador] << " ";
+            // cout << array_dicionario[contador] << " ";
             contador++;
             // addBits(value, qBits);
         }
     }
-    cout << "\n";
+    // cout << "\n";
     input.close();
 
-    for (int k = 0; k < contador - 1; k++)
+    /*for (int k = 0; k < contador - 1; k++)
     {
         cout << array_dicionario[k] << " ";
-    }
+    }*/
 
-    cout << " ------------------ DICIONARIO ANTES DA DECODIFICAÇAO ------------------------------" << endl;
-    cout << "\n";
-    cout << "\n";
+    // cout << " ------------------ DICIONARIO ANTES DA DECODIFICAÇAO ------------------------------" << endl;
+    // cout << "\n";s
+    // cout << "\n";
     output = fopen(name, "wb");
     if (output <= 0)
     {
@@ -230,12 +230,12 @@ int testeSalva()
     // 0x02 0x80 0x81 0xFC 0x20 0x10 0x0F 0xF0 0x50 0x03 0x13 0xFF 0xC8 0x2C
 
     salvaFim();
-    printf("arquivo lido: \n");
-    lerArquivo(name);
+    // printf("arquivo lido: \n");
+    // lerArquivo(name);
     return contador - 1;
 }
 
-void testeLeitura(int contador)
+vector<int> testeLeitura(int contador)
 {
     int i = 0;
     int qBits = 0;
@@ -245,34 +245,37 @@ void testeLeitura(int contador)
     if (output <= 0)
     {
         printf("Erro abrindo o arquivo %s\n", name);
-        return;
+        // return;
     }
     fseek(output, 0, SEEK_END);
     tam = ftell(output);
     fseek(output, 0, SEEK_SET);
-    printf("tamanho do arquivo: %d\n", tam);
+    // printf("tamanho do arquivo: %d\n", tam);
     if (buffer)
         delete buffer;
     buffer = new unsigned char[tam];
     fread(buffer, 1, tam, output);
 
-    int vet[500] = {};
+    vector<int> inteiros_decodificados;
     // i = 0;
-    qBits = 9;
+    qBits = 16;
 
-    for (i = 0; i < tam;)
+    for (i = 0; i < tam; i++)
     {
         // cout << i;
-        vet[i++] = getBits(qBits);
+        inteiros_decodificados.push_back(getBits(qBits));
         // cout << i;
     }
 
-    printf("teste leitura:\n");
+    // printf("teste leitura:\n");
     int j;
-    for (j = 0; j < contador; j++)
-        printf("%d ", vet[j]);
+    /*for (j = 0; j < contador; j++)
+    {
+        cout << inteiros_decodificados[j] << endl;
+    }*/
 
     printf("\n");
+    return inteiros_decodificados;
 }
 
 template <typename K, typename V>
@@ -302,10 +305,10 @@ vector<int> encoding(ifstream &input)
 
     string p = "", c = "";
 
-    input.open("texto.txt");
+    input.open("test.txt");
 
     input >> a;
-    cout << "VALOR DO CHAR a: " << a << endl;
+    // cout << "VALOR DO CHAR a: " << a << endl;
 
     p += a;
     char b;
@@ -338,7 +341,7 @@ vector<int> encoding(ifstream &input)
                 // cout << p << "\t" << table[p] << "\t\t"
                 //<< p + c << "\t" << code << endl;
                 output_code.push_back(table[p]);
-                if (code <= 511)
+                if (code <= 65535)
                 {
                     table[p + c] = code;
                     code++;
@@ -349,10 +352,48 @@ vector<int> encoding(ifstream &input)
         }
         input.close();
     }
-    cout << p << "\t" << table[p] << endl;
+    // cout << p << "\t" << table[p] << endl;
     output_code.push_back(table[p]);
     // print_map(table);
     return output_code;
+}
+
+void decoding(vector<int> op, int contador)
+{
+    cout << "\nDecoding\n";
+    unordered_map<int, string> table;
+    for (int i = 0; i <= 255; i++)
+    {
+        string ch = "";
+        ch += char(i);
+        table[i] = ch;
+    }
+    int old = op[0], n;
+    string s = table[old];
+    string c = "";
+    c += s[0];
+    cout << s;
+    int count = 256;
+    for (int i = 0; i < contador - 1; i++)
+    {
+        n = op[i + 1];
+        if (table.find(n) == table.end())
+        {
+            s = table[old];
+            s = s + c;
+        }
+        else
+        {
+            s = table[n];
+        }
+        cout << s;
+        c = "";
+        c += s[0];
+        table[count] = table[old] + c;
+        count++;
+        old = n;
+    }
+    // print_map(table);
 }
 
 int main()
@@ -362,14 +403,16 @@ int main()
 
     ifstream input;
     vector<int> output_code = encoding(input);
+    vector<int> inteiros_decodificados;
 
-    cout << "Output Codes are: ";
+    // cout << "Output Codes are: ";
 
     for (int i = 0; i < output_code.size(); i++)
     {
         cout << output_code[i] << " ";
     }
-    cout << endl;
+
+    // decoding(output_code);
 
     ofstream output;
 
@@ -383,5 +426,6 @@ int main()
     output.close();
 
     contador = testeSalva();
-    testeLeitura(contador);
+    inteiros_decodificados = testeLeitura(contador);
+    decoding(inteiros_decodificados, contador);
 }
