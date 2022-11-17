@@ -305,7 +305,7 @@ vector<int> encoding(ifstream &input)
 
     string p = "", c = "";
 
-    input.open("test.txt");
+    input.open("aa.txt");
 
     input >> a;
     // cout << "VALOR DO CHAR a: " << a << endl;
@@ -332,14 +332,14 @@ vector<int> encoding(ifstream &input)
                 c = "";
             }
 
-            if (table.find(p + c) != table.end()) // efesifejfejfioefeif
+            if (table.find(p + c) != table.end())
             {
                 p = p + c;
             }
             else
             {
-                // cout << p << "\t" << table[p] << "\t\t"
-                //<< p + c << "\t" << code << endl;
+                cout << p << "\t" << table[p] << "\t\t";
+                cout << p + c << "\t" << code << endl;
                 output_code.push_back(table[p]);
                 if (code <= 65535)
                 {
