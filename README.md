@@ -1,4 +1,4 @@
-## Get started
+# Get started
 
 - Programa que realiza compressão de arquivos com algoritmo LZW
 
