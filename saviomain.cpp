@@ -3,6 +3,7 @@
 #include <unordered_map>
 #include <fstream>
 #include <iostream>
+#include <time.h>
 
 using namespace std;
 #define SIZE 4096
@@ -160,7 +161,7 @@ int testeSalva()
     int qBits = 0, i, contador = 0;
     int value = 0;
     int j = 0;
-    qBits = 16;
+    qBits = 9;
 
     vector<int> array_dict;
 
@@ -264,11 +265,11 @@ vector<int> testeLeitura(int contador)
     // int vet[500] = {};
     vector<int> vet;
     // i = 0;
-    qBits = 16;
+    qBits = 9;
     int value;
 
-    cout << "entrando" << endl;
-    cout << "Tam max: " << vet.max_size() << endl;
+    // cout << "entrando" << endl;
+    // cout << "Tam max: " << vet.max_size() << endl;
     for (i = 0; i < tam;)
     {
         i++;
@@ -286,14 +287,14 @@ vector<int> testeLeitura(int contador)
         // cout << value << " ";
         //  cout << i;
     }
-    cout << "Saindo" << endl;
+    // cout << "Saindo" << endl;
 
-    printf("teste leitura:\n");
-    int j;
-    // for (j = 0; j < contador; j++)
-    //     printf("%d ", vet[j]);
+    // printf("teste leitura:\n");
+    // int j;
+    //  for (j = 0; j < contador; j++)
+    //      printf("%d ", vet[j]);
 
-    printf("\n");
+    // printf("\n");
     return vet;
 }
 
@@ -391,7 +392,7 @@ vector<int> encoding(ifstream &input)
                 // cout << p << "\t" << table[p] << "\t\t"
                 // << p + c << "\t" << code << endl;
                 output_code.push_back(table[p]);
-                if (code <= 65535)
+                if (code <= 511)
                 {
                     table[p + c] = code;
                     code++;
@@ -414,47 +415,64 @@ void decoding(vector<int> op, int contador)
     // for(int i = 0; i < contador; i++){
     //     cout << op[i] << endl;
     // }
+
     cout << "\nDecoding\n";
-    unordered_map<int, string> table;
-    for (int i = 0; i <= 255; i++)
+    ofstream arquivo_decodificado;
+
+    arquivo_decodificado.open("decodificado.txt");
+
+    if (!arquivo_decodificado.good())
     {
-        string ch = "";
-        ch += char(i);
-        table[i] = ch;
+        arquivo_decodificado.close();
     }
-    int old = op[0], n;
-    string s = table[old];
-    string c = "";
-    c += s[0];
-    cout << s;
-    int count = 256;
-    for (int i = 0; i < contador - 1; i++)
+    else
     {
-        n = op[i + 1];
-        if (table.find(n) == table.end())
+        unordered_map<int, string> table;
+        for (int i = 0; i <= 255; i++)
         {
-            s = table[old];
-            s = s + c;
+            string ch = "";
+            ch += char(i);
+            table[i] = ch;
         }
-        else
-        {
-            s = table[n];
-        }
-        cout << s;
-        c = "";
+        int old = op[0], n;
+        string s = table[old];
+        string c = "";
         c += s[0];
-        table[count] = table[old] + c;
-        count++;
-        old = n;
+        // cout << s;
+        arquivo_decodificado << s;
+        int count = 256;
+        for (int i = 0; i < contador - 1; i++)
+        {
+            n = op[i + 1];
+            if (table.find(n) == table.end())
+            {
+                s = table[old];
+                s = s + c;
+            }
+            else
+            {
+                s = table[n];
+            }
+            // cout << s;
+            arquivo_decodificado << s;
+            c = "";
+            c += s[0];
+            table[count] = table[old] + c;
+            count++;
+            old = n;
+        }
     }
+    arquivo_decodificado.close();
 }
 
 int main()
 {
+    time_t start, end;
     int contador = 0;
-    setlocale(LC_ALL, "");
+    // setlocale(LC_ALL, "");
 
     ifstream input;
+    start = time(NULL);
     vector<int> output_code = encoding(input);
 
     // cout << "Output Codes are: ";
@@ -482,4 +500,7 @@ int main()
     vector_depois_leitura = testeLeitura(contador);
 
     decoding(vector_depois_leitura, contador);
+    end = time(NULL);
+
+    cout << "O tempo de comrpessão e descompressão foi: " << difftime(end, start));
 }
