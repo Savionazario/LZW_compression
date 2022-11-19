@@ -3,24 +3,24 @@
 #include <unordered_map>
 #include <fstream>
 #include <iostream>
-#include <time.h>
+#include <chrono>
 
 using namespace std;
 #define SIZE 4096
 
 unsigned char *buffer = new unsigned char[SIZE];
-int pos = 0; // posicao em bits
+int pos = 0;
 FILE *output;
 const char *name = "output.lzw";
 
 void addBits(int value, int qBits)
 {
-    int byte = pos / 8;   // posicao do proximo byte com bits disponiveis
-    int shift = pos % 8;  // quant de bits utilizados
-    int disp = 8 - shift; // quant de bits disponiveis
+    int byte = pos / 8;
+    int shift = pos % 8;
+    int disp = 8 - shift;
     unsigned int mask = 0;
-    int falta = qBits - disp; // bits que faltam para o proximo byte
-    int falta2 = 0;           // bits que faltan para o segundo proximo byte
+    int falta = qBits - disp;
+    int falta2 = 0;
     int i;
     if (falta > 8)
     {
@@ -28,13 +28,10 @@ void addBits(int value, int qBits)
         falta = 8;
     }
 
-    // printf("value=%3d::byte=%d, shift=%d, disp=%d, mask=%d, falta=%d, falta2=%d\n", value, byte, shift, disp, mask, falta, falta2);
-
     mask = 0;
     for (i = 0; i < disp; i++)
         mask = mask | (1 << i);
     buffer[byte] = (buffer[byte] & (~mask & 0xFF)) | ((value >> (falta + falta2)) & mask);
-    // printf("mask1=0x%02X (~0x%02X)\n", mask, (~mask & 0xFF));
 
     if (falta > 0)
     {
@@ -45,7 +42,6 @@ void addBits(int value, int qBits)
             buffer[byte + 1] = (buffer[byte + 1] & mask) | ((value << (8 - falta)) & (~mask & 0xFF));
         else
             buffer[byte + 1] = ((value >> falta2) & 0xFF);
-        // printf("mask2=0x%02X (~0x%02X)\n", mask, (~mask & 0xFF));
     }
 
     if (falta2 > 0)
@@ -54,19 +50,17 @@ void addBits(int value, int qBits)
         for (i = 0; i < (8 - falta2); i++)
             mask = mask | (1 << i);
         buffer[byte + 2] = (buffer[byte + 2] & mask) | ((value << (8 - falta2)) & (~mask & 0xFF));
-        // printf("mask3=0x%02X (~0x%02X)\n", mask, (~mask & 0xFF));
     }
 
     pos += qBits;
 
-    // Adicionado para salvar os bytes as poucos.
-    byte = pos / 8; // posicao do proximo byte com bits disponiveis
+    byte = pos / 8;
+
     if (byte >= SIZE - 3)
     {
         fwrite(buffer, 1, byte, output);
-        // printf("salvei %d bytes\n", byte);
         pos -= byte * 8;
-        shift = pos % 8; // quant de bits utilizados
+        shift = pos % 8;
         for (i = 0; i < (8 - shift); i++)
             mask = mask | (1 << i);
         buffer[0] = buffer[byte] & ~mask;
@@ -76,12 +70,12 @@ void addBits(int value, int qBits)
 int getBits(int qBits)
 {
     int value = 0;
-    int byte = pos / 8;   // posicao do proximo byte com bits disponiveis
-    int shift = pos % 8;  // quant de bits utilizados
-    int disp = 8 - shift; // quant de bits disponiveis
+    int byte = pos / 8;
+    int shift = pos % 8;
+    int disp = 8 - shift;
     unsigned int mask = 0;
-    int falta = qBits - disp; // bits que faltam para o proximo byte
-    int falta2 = 0;           // bits que faltan para o segundo proximo byte
+    int falta = qBits - disp;
+    int falta2 = 0;
     int i;
     if (falta > 8)
     {
@@ -89,13 +83,11 @@ int getBits(int qBits)
         falta = 8;
     }
 
-    // printf("value=%3d::byte=%d, shift=%d, disp=%d, mask=%d, falta=%d, falta2=%d\n", value, byte, shift, disp, mask, falta, falta2);
-
     mask = 0;
+
     for (i = 0; i < disp; i++)
         mask = mask | (1 << i);
     value = (buffer[byte] & mask) << (falta + falta2);
-    // printf("mask1=0x%02X (~0x%02X)\n", mask, (~mask & 0xFF));
 
     if (falta > 0)
     {
@@ -103,16 +95,11 @@ int getBits(int qBits)
             value = value | ((buffer[byte + 1]) >> (8 - falta));
         else
             value = value | (buffer[byte + 1] << falta2);
-        // printf("mask2=0x%02X (~0x%02X)\n", mask, (~mask & 0xFF));
     }
 
     if (falta2 > 0)
     {
-        // mask = 0;
-        // for (i = 0 ; i < (8 - falta2) ; i++)
-        //     mask = mask | (1 << i);
         value = value | (buffer[byte + 2] >> (8 - falta2));
-        // printf("mask3=0x%02X (~0x%02X)\n", mask, (~mask & 0xFF));
     }
 
     pos += qBits;
@@ -122,14 +109,13 @@ int getBits(int qBits)
 
 void salvaFim()
 {
-    int byte = pos / 8; // posicao do proximo byte com bits disponiveis
+    int byte = pos / 8;
     int shift = pos % 8;
     if (shift > 0)
         byte++;
     if (byte > 0)
     {
         fwrite(buffer, 1, byte, output);
-        // printf("salvei fim %d bytes\n", byte);
     }
     fclose(output);
 }
@@ -157,11 +143,10 @@ void lerArquivo(const char *name)
 
 int testeSalva()
 {
-    // int i, array_dicionario[500] = {0}, contador = 0;
     int qBits = 0, i, contador = 0;
     int value = 0;
     int j = 0;
-    qBits = 9;
+    qBits = 16;
 
     vector<int> array_dict;
 
@@ -177,24 +162,13 @@ int testeSalva()
         while (!input.eof())
         {
             input >> value;
-            // array_dicionario[contador] = value;
             array_dict.push_back(value);
-            // cout << array_dict[contador] << " ";
             contador++;
-            // addBits(value, qBits);
         }
     }
     cout << "\n";
     input.close();
 
-    // for (int k = 0; k < contador - 1; k++)
-    // {
-    //     cout << array_dicionario[k] << " ";
-    // }
-
-    cout << "\n------------------ DICIONARIO ANTES DA DECODIFICAÇAO ------------------------------" << endl;
-    cout << "\n";
-    cout << "\n";
     output = fopen(name, "wb");
     if (output <= 0)
     {
@@ -204,39 +178,10 @@ int testeSalva()
 
     for (int k = 0; k < contador - 1; k++)
     {
-        // addBits(array_dicionario[k], qBits);
         addBits(array_dict[k], qBits);
     }
 
-    // addBits(10, qBits);
-    // addBits(8, qBits);
-    // addBits(127, qBits);
-    // addBits(32, qBits);
-    // addBits(64, qBits);
-    // addBits(255, qBits);
-    // addBits(20, qBits);
-    // addBits(3, qBits);
-    //  Sa'ida esperada:
-    //  0x05 0x02 0x0F 0xE2 0x02 0x03 0xFC 0x28 0x03
-
-    /*qBits = 10;
-    addBits(10,  qBits);
-    addBits(8,   qBits);
-    addBits(127, qBits);
-    addBits(32,  qBits);
-    addBits(64,  qBits);
-    addBits(255, qBits);
-    addBits(20,  qBits);
-    addBits(3,   qBits);
-    addBits(79,  qBits);
-    addBits(1020,qBits);
-    addBits(523, qBits);*/
-    // Sa'ida esperada:
-    // 0x02 0x80 0x81 0xFC 0x20 0x10 0x0F 0xF0 0x50 0x03 0x13 0xFF 0xC8 0x2C
-
     salvaFim();
-    // printf("arquivo lido: \n");
-    //  lerArquivo(name);
     return contador - 1;
 }
 
@@ -262,18 +207,13 @@ vector<int> testeLeitura(int contador)
     buffer = new unsigned char[tam];
     fread(buffer, 1, tam, output);
 
-    // int vet[500] = {};
     vector<int> vet;
-    // i = 0;
-    qBits = 9;
+    qBits = 16;
     int value;
 
-    // cout << "entrando" << endl;
-    // cout << "Tam max: " << vet.max_size() << endl;
     for (i = 0; i < tam;)
     {
         i++;
-        // cout << i;
         if (vet.size() == contador)
         {
             break;
@@ -283,27 +223,17 @@ vector<int> testeLeitura(int contador)
             value = getBits(qBits);
             vet.push_back(value);
         }
-
-        // cout << value << " ";
-        //  cout << i;
     }
-    // cout << "Saindo" << endl;
-
-    // printf("teste leitura:\n");
-    // int j;
-    //  for (j = 0; j < contador; j++)
-    //      printf("%d ", vet[j]);
-
-    // printf("\n");
     return vet;
 }
 
 template <typename K, typename V>
-void print_map(std::unordered_map<K, V> const &m)
+void print_map(unordered_map<K, V> const &m)
 {
     for (auto const &pair : m)
     {
-        std::cout << "{" << pair.first << ": " << pair.second << "}\n";
+
+        cout << "{" << pair.first << ": " << pair.second << "} " << endl;
     }
 }
 
@@ -315,25 +245,20 @@ vector<int> encoding(ifstream &input)
     char a;
     int count = 0;
 
-    // opening the file in read mode
-    FILE *fp = fopen("texto.txt", "r");
+    FILE *fp = fopen("texto.txt", "rb");
 
-    // checking if the file exist or not
     if (fp == NULL)
     {
         printf("File Not Found!\n");
-        // return -1;
     }
 
     fseek(fp, 0L, SEEK_END);
 
-    // calculating the size of the file
     long int tam = ftell(fp);
 
-    // closing the file
     fclose(fp);
 
-    FILE *arquivo;
+    vector<char> vector_char(tam);
 
     cout << "Encoding\n";
 
@@ -346,53 +271,32 @@ vector<int> encoding(ifstream &input)
 
     string p = "", c = "";
 
-    // input.open("test.txt");
-    arquivo = fopen("texto.txt", "r");
+    ifstream arquivo("texto.txt", ios::out | ios::binary);
 
-    // input >> a;
-    a = fgetc(arquivo);
-    // cout << "VALOR DO CHAR a: " << a << endl;
-
-    p += a;
     char b;
-    if (arquivo == NULL)
+    if (!arquivo.good())
     {
         cout << "Não foi possível ler do arquivo" << endl;
-        // input.close();
     }
     else
     {
-        while (b != EOF)
+        arquivo.read((char *)&vector_char[0], sizeof(char));
+
+        p += vector_char[0];
+        for (int j = 1; j < vector_char.size(); j++)
         {
-            count++;
-            // input >> b;
-            // cout << "VALOR DO CHAR p: " << p << endl;
-            // c += b;
-            // cout << "VALOR DO CHAR c: " << c << endl;
-            // input >> b;
+            arquivo.read((char *)&vector_char[j], sizeof(char));
 
-            b = fgetc(arquivo);
-            c += b;
+            c += vector_char[j];
 
-            // if (count == tam-1)
-            // {
-            //     c = "";
-            // }
-            if (b == EOF)
-            {
-                c = "";
-            }
-
-            if (table.find(p + c) != table.end()) // efesifejfejfioefeif
+            if (table.find(p + c) != table.end())
             {
                 p = p + c;
             }
             else
             {
-                // cout << p << "\t" << table[p] << "\t\t"
-                // << p + c << "\t" << code << endl;
                 output_code.push_back(table[p]);
-                if (code <= 511)
+                if (code <= 65535)
                 {
                     table[p + c] = code;
                     code++;
@@ -401,25 +305,19 @@ vector<int> encoding(ifstream &input)
             }
             c = "";
         }
-        // input.close();
-        fclose(arquivo);
+        arquivo.close();
     }
-    // cout << p << "\t" << table[p] << endl;
     output_code.push_back(table[p]);
-    // print_map(table);
     return output_code;
 }
 
 void decoding(vector<int> op, int contador)
 {
-    // for(int i = 0; i < contador; i++){
-    //     cout << op[i] << endl;
-    // }
-
+    unordered_map<int, string> table;
     cout << "\nDecoding\n";
     ofstream arquivo_decodificado;
 
-    arquivo_decodificado.open("decodificado.txt");
+    arquivo_decodificado.open("decodificado.txt", ios::out | ios::binary);
 
     if (!arquivo_decodificado.good())
     {
@@ -427,7 +325,6 @@ void decoding(vector<int> op, int contador)
     }
     else
     {
-        unordered_map<int, string> table;
         for (int i = 0; i <= 255; i++)
         {
             string ch = "";
@@ -438,7 +335,6 @@ void decoding(vector<int> op, int contador)
         string s = table[old];
         string c = "";
         c += s[0];
-        // cout << s;
         arquivo_decodificado << s;
         int count = 256;
         for (int i = 0; i < contador - 1; i++)
@@ -453,16 +349,19 @@ void decoding(vector<int> op, int contador)
             {
                 s = table[n];
             }
-            // cout << s;
             arquivo_decodificado << s;
             c = "";
             c += s[0];
-            table[count] = table[old] + c;
-            count++;
+            if (count <= 65535)
+            {
+                table[count] = table[old] + c;
+                count++;
+            }
             old = n;
         }
     }
     arquivo_decodificado.close();
+    // print_map(table);
 }
 
 int main()
@@ -472,16 +371,8 @@ int main()
     // setlocale(LC_ALL, "");
 
     ifstream input;
-    start = time(NULL);
+    auto start_time = chrono::high_resolution_clock::now();
     vector<int> output_code = encoding(input);
-
-    // cout << "Output Codes are: ";
-
-    // for (int i = 0; i < output_code.size(); i++)
-    // {
-    //     cout << output_code[i] << " ";
-    // }
-    // cout << endl;
 
     ofstream output;
 
@@ -500,7 +391,7 @@ int main()
     vector_depois_leitura = testeLeitura(contador);
 
     decoding(vector_depois_leitura, contador);
-    end = time(NULL);
+    auto current_time = chrono::high_resolution_clock::now();
 
-    cout << "O tempo de comrpessão e descompressão foi: " << difftime(end, start);
+    cout << "O tempo de execução foi: " << chrono::duration_cast<chrono::milliseconds>(current_time - start_time).count() << " milisegundos" << endl;
 }
